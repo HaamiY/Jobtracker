@@ -52,7 +52,10 @@ def search_jobs(company_name):
         return []
         
     search_company = COMPANY_ALIASES.get(company_name, company_name)
-    url = "https://rapidapi.com"
+    
+    # Updated to the universal JSearch endpoint
+    url = "https://jsearch.p.rapidapi.com/search" 
+    
     querystring = {
         "query": f"{search_company} {QUERY_KEYWORDS} internship OR co-op",
         "page": "1",
@@ -60,17 +63,23 @@ def search_jobs(company_name):
     }
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "://rapidapi.com"
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
     }
     try:
         response = requests.get(url, headers=headers, params=querystring, timeout=30)
-        response.raise_for_status()
+        
+        # If the server blocks us or errors out, this will print the clear status code (e.g., 403 or 401)
+        if response.status_code != 200:
+            print(f"API Error for {search_company}: Status Code {response.status_code}")
+            return []
+            
         payload = response.json()
-        data = payload.get('data', {})
-        return data.get('jobs', []) if isinstance(data, dict) else []
-    except (requests.RequestException, ValueError, TypeError, AttributeError) as e:
+        return payload.get('data', [])
+        
+    except Exception as e:
         print(f"Error searching {search_company}: {e}")
         return []
+
 
 def send_email(new_jobs):
     if not new_jobs:
