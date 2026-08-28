@@ -52,22 +52,26 @@ def search_jobs(company_name):
         return []
         
     search_company = COMPANY_ALIASES.get(company_name, company_name)
-    url = "https://rapidapi.com" 
+    url = "https://jsearch.p.rapidapi.com/search-v2" 
     
     querystring = {
         "query": f"{search_company} {QUERY_KEYWORDS} internship OR co-op",
         "page": "1",
         "num_pages": "1"
     }
+    
+    # We add a fake web browser User-Agent so GitHub runners bypass firewalls
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "://rapidapi.com"
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     try:
         response = requests.get(url, headers=headers, params=querystring, timeout=30)
         
+        # This logs a clear error if your API key token count runs out
         if response.status_code != 200:
-            print(f"API Error for {search_company}: Status Code {response.status_code}")
+            print(f"API Error for {search_company}: Status Code {response.status_code} - Reason: {response.text[:100]}")
             return []
             
         payload = response.json()
@@ -77,6 +81,7 @@ def search_jobs(company_name):
     except Exception as e:
         print(f"Error searching {search_company}: {e}")
         return []
+
 
 def send_email(new_jobs):
     if not new_jobs:
