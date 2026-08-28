@@ -20,19 +20,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install requests
-
       - name: Run the script
         env:
           RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
-        run: |
-          echo "Is RAPIDAPI_KEY empty?"
-          if [ -z "${{ secrets.RAPIDAPI_KEY }}" ]; then echo "YES, VAULT IS EMPTY"; else echo "NO, VAULT HAS VALUE"; fi
-          python auto_job_tracker.py
+        run: python auto_job_tracker.py
 
-          python auto_job_tracker.py  # Change main.py to your actual file name if different
 
       - name: Save seen jobs changes
         run: |
