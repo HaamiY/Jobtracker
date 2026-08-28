@@ -5,14 +5,14 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
-# --- SECURE CONFIGURATION (Pulls from GitHub Vault) ---
+# --- SECURE CONFIGURATION (Pulls from hidden GitHub Secrets) ---
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 RECEIVER_EMAIL = os.environ.get("RECEIVER_EMAIL")
 
 # --- CONFIGURATION (CLOUD COMPATIBLE) ---
-# Saves tracking file relative to the script folder on Linux/Windows
+# Saves the tracking file directly inside your repository directory
 SEEN_JOBS_FILE = os.path.join(os.path.dirname(__file__), "seen_jobs.json")
 
 # Your Target Companies
@@ -52,9 +52,7 @@ def search_jobs(company_name):
         return []
         
     search_company = COMPANY_ALIASES.get(company_name, company_name)
-    
-    # Updated to the universal JSearch endpoint
-    url = "https://jsearch.p.rapidapi.com/search" 
+    url = "https://rapidapi.com" 
     
     querystring = {
         "query": f"{search_company} {QUERY_KEYWORDS} internship OR co-op",
@@ -63,23 +61,22 @@ def search_jobs(company_name):
     }
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+        "X-RapidAPI-Host": "://rapidapi.com"
     }
     try:
         response = requests.get(url, headers=headers, params=querystring, timeout=30)
         
-        # If the server blocks us or errors out, this will print the clear status code (e.g., 403 or 401)
         if response.status_code != 200:
             print(f"API Error for {search_company}: Status Code {response.status_code}")
             return []
             
         payload = response.json()
-        return payload.get('data', [])
+        data = payload.get('data', {})
+        return data.get('jobs', []) if isinstance(data, dict) else []
         
     except Exception as e:
         print(f"Error searching {search_company}: {e}")
         return []
-
 
 def send_email(new_jobs):
     if not new_jobs:
