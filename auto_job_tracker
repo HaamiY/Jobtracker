@@ -7,12 +7,16 @@ import os
 
 # --- CONFIGURATION ---
 RAPIDAPI_KEY = "04578573f4mshc9ea6f975404f99p1d40ebjsna173e03ed5f7"
-SEEN_JOBS_FILE = r"C:\Users\haami\JobTracker\seen_jobs.json"
+
 
 # Your Email Settings (Use an App Password if using Gmail)
 SENDER_EMAIL = "haamibot@gmail.com"
 SENDER_PASSWORD = "qxjt mzlh eohh gecn"
 RECEIVER_EMAIL = "haamiyassin@gmail.com"
+
+# --- CONFIGURATION (CLOUD COMPATIBLE) ---
+# This saves the file in the same folder as the script, working on Windows and Linux
+SEEN_JOBS_FILE = os.path.join(os.path.dirname(__file__), "seen_jobs.json")
 
 # Your Target Companies
 COMPANIES = [
@@ -23,26 +27,33 @@ COMPANIES = [
     "Polestar", "Jaguar", "Land Rover", "Mitsubishi", "Stellantis"
 ]
 
-# Clean up company names for search queries (e.g., "ECR" usually posts as "Ed Carpenter Racing")
 COMPANY_ALIASES = {
     "ECR": "Ed Carpenter Racing",
     "GM": "General Motors"
 }
 
-# Your Target Keywords
 QUERY_KEYWORDS = '"testing" OR "aerodynamics" OR "aero" OR "validation" OR "hardware in the loop" OR "wind tunnel" OR "trackside" OR "hands-on"'
 
 def load_seen_jobs():
     if not os.path.exists(SEEN_JOBS_FILE):
         return set()
-    with open(SEEN_JOBS_FILE, 'r') as f:
-        return set(json.load(f))
+    try:
+        with open(SEEN_JOBS_FILE, 'r') as f:
+            return set(json.load(f))
+    except Exception:
+        return set()
 
 def save_seen_jobs(seen_jobs):
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(SEEN_JOBS_FILE), exist_ok=True)
     with open(SEEN_JOBS_FILE, 'w') as f:
         json.dump(list(seen_jobs), f)
 
 def search_jobs(company_name):
+    if not RAPIDAPI_KEY:
+        print("Missing RapidAPI Key!")
+        return []
+        
     search_company = COMPANY_ALIASES.get(company_name, company_name)
     url = "https://jsearch.p.rapidapi.com/search-v2"
     querystring = {
@@ -66,7 +77,10 @@ def search_jobs(company_name):
 
 def send_email(new_jobs):
     if not new_jobs:
-        return # Don't send an email if there are no new jobs
+        return 
+    if not SENDER_EMAIL or not SENDER_PASSWORD:
+        print("Missing email credentials! Cannot send report.")
+        return
 
     msg = MIMEMultipart()
     msg['From'] = SENDER_EMAIL
@@ -109,7 +123,6 @@ def main():
         for job in results:
             job_id = job.get('job_id')
             if job_id and job_id not in seen_jobs:
-                # Filter out junk or irrelevant postings if needed
                 seen_jobs.add(job_id)
                 new_jobs_list.append(job)
     
