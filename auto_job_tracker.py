@@ -109,24 +109,25 @@ def send_email(new_jobs):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        # We switch to SMTP_SSL on Port 465 which is cleaner for cloud runners bypassing DNS bugs
-        server = smtplib.SMTP_SSL('://gmail.com', 465, timeout=15)
+        # We target Google's direct IP address on port 465 to skip the DNS lookup bug
+        server = smtplib.SMTP_SSL('74.125.142.108', 465, timeout=15)
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
         server.quit()
-        print("Email sent successfully!")
+        print("Email sent successfully using direct IP address!")
     except Exception as e:
-        print(f"Standard connection failed: {e}. Trying fallback...")
+        print(f"Direct IP SSL connection failed: {e}. Trying TLS IP fallback...")
         try:
-            # Fallback to standard TLS port 587 if SSL is restricted
-            server = smtplib.SMTP('://gmail.com', 587, timeout=15)
+            # Fallback to port 587 using the direct IP address
+            server = smtplib.SMTP('74.125.142.108', 587, timeout=15)
             server.starttls()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
             server.quit()
-            print("Email sent successfully via fallback!")
+            print("Email sent successfully via TLS IP fallback!")
         except Exception as fallback_error:
             print(f"Failed to send email entirely: {fallback_error}")
+
 
 
 def main():
