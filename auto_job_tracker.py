@@ -82,7 +82,6 @@ def search_jobs(company_name):
         print(f"Error searching {search_company}: {e}")
         return []
 
-
 def send_email(new_jobs):
     if not new_jobs:
         return 
@@ -110,14 +109,25 @@ def send_email(new_jobs):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        server = smtplib.SMTP('://gmail.com', 587)
-        server.starttls()
+        # We switch to SMTP_SSL on Port 465 which is cleaner for cloud runners bypassing DNS bugs
+        server = smtplib.SMTP_SSL('://gmail.com', 465, timeout=15)
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
         server.quit()
         print("Email sent successfully!")
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"Standard connection failed: {e}. Trying fallback...")
+        try:
+            # Fallback to standard TLS port 587 if SSL is restricted
+            server = smtplib.SMTP('://gmail.com', 587, timeout=15)
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+            print("Email sent successfully via fallback!")
+        except Exception as fallback_error:
+            print(f"Failed to send email entirely: {fallback_error}")
+
 
 def main():
     seen_jobs = load_seen_jobs()
